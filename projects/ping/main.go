@@ -18,6 +18,6 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	log.Println("start")
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /ping", pingHandler)
+	mux.HandleFunc("GET/ping", pingHandler)
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
