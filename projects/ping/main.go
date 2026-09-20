@@ -1,12 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 )
 
+type pingResponse struct {
+	Status string `json:"status"`
+}
+
 func pingHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("ok"))
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(pingResponse{Status: "ok"})
 }
 func main() {
 	log.Println("start")
