@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 )
 
 type pingResponse struct {
@@ -16,8 +17,14 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pingResponse{Status: "ok"})
 }
 func main() {
-	log.Println("start")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	addr := ":" + port
+
+	log.Printf("listening on %s", addr)
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET/ping", pingHandler)
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	mux.HandleFunc("GET /ping", pingHandler)
+	log.Fatal(http.ListenAndServe(addr, mux))
 }
