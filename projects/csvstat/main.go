@@ -52,7 +52,7 @@ func computeStats(values []string) Stats {
 	}
 	stats.Numeric = true
 	stats.Sum = sum
-	stats.Avg = sum / float64(len(t))
+	stats.Avg = sum / float64(len(values))
 	stats.Max = max
 	stats.Min = min
 	return stats
