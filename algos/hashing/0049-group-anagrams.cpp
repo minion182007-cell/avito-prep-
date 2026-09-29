@@ -1,3 +1,15 @@
+// Group Anagrams — https://leetcode.com/problems/group-anagrams/
+// Тема: хеш-таблица с вычисляемым ключом
+// Идея: у анаграмм одинаковый канонический вид — вектор частот или отсортированное слово;
+//       он и становится ключом мапы, значение — список слов.
+// Версии: 1) вектор из 26 частот  — O(n·k) время
+//         2) сортировка букв      — O(n·k·log k) время, короче и понятнее
+// Статус: версия 1 — с разбором; версия 2 — сам, после разбора
+// Подробные заметки: 0049-group-anagrams.md
+// Дата: 23.09.2026
+
+// ---------- Версия 1: вектор частот, O(n·k) ----------
+
 class Solution {
 public:
     vector<vector<string>> groupAnagrams(vector<string>& strs) {
@@ -22,6 +34,9 @@ public:
         return result;
     }
 };
+
+// ---------- Версия 2: сортировка букв, O(n·k·log k) ----------
+
 class Solution {
 public:
     vector<vector<string>> groupAnagrams(vector<string>& strs) {
