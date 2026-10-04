@@ -16,6 +16,7 @@
 | 11   | [Container With Most Water](https://leetcode.com/problems/container-with-most-water/) | два указателя | O(n) / O(1) | сам | [two-pointers/0011-container-with-most-water.cpp](two-pointers/0011-container-with-most-water.cpp) |
 | 283  | [Move Zeroes](https://leetcode.com/problems/move-zeroes/) | два указателя | O(n) / O(1) | сам (с подсказкой из плана) | [two-pointers/0283-move-zeroes.cpp](two-pointers/0283-move-zeroes.cpp) |
 | 977  | [Squares of a Sorted Array](https://leetcode.com/problems/squares-of-a-sorted-array/) | два указателя | O(n) / O(1) | insert — сам, с конца — с подсказкой | [two-pointers/0977-squares-of-a-sorted-array.cpp](two-pointers/0977-squares-of-a-sorted-array.cpp) |
+| 15   | [3Sum](https://leetcode.com/problems/3sum/) | два указателя | O(n²) / O(1) | с подсказкой | [two-pointers/0015-3sum.cpp](two-pointers/0015-3sum.cpp) |
 
 ## Статусы
 
