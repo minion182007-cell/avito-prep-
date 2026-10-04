@@ -2,58 +2,70 @@ package main
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"strconv"
 )
 
+var (
+	ErrIsEmpty      = errors.New("file is empty")
+	ErrSearchColumn = errors.New("Column not search")
+)
+
 type Stats struct {
 	Rows    int
+	Avg     float64
 	Unique  int
-	Numeric bool
 	Sum     float64
 	Max     float64
 	Min     float64
-	Avg     float64
+	Numeric bool
 }
 
 func readColumn(path, column string) ([]string, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("read %s column %w", path, err)
+		return nil, fmt.Errorf("open %s : %w", path, err)
 	}
 	defer f.Close()
-	recorders, err := csv.NewReader(f).ReadAll()
+	recorder, err := csv.NewReader(f).ReadAll()
 	if err != nil {
-		return nil, fmt.Errorf("%w", err)
+		return nil, err
 	}
-	if len(recorders) == 0 {
-		return nil, fmt.Errorf("File is empty")
+	if len(recorder) == 0 {
+		return nil, ErrIsEmpty
 	}
 	idx := -1
-	for i, v := range recorders[0] {
-		if column == v {
+	for i, v := range recorder[0] {
+		if v == column {
 			idx = i
 			break
 		}
 	}
 	if idx == -1 {
-		return nil, fmt.Errorf("%q not found,aviable %v", column, recorders[0])
+		return nil, fmt.Errorf("in %q: %w, avilable %q", column, ErrSearchColumn, recorder[0])
 	}
 	var values []string
-	for _, row := range recorders[1:] {
+	for _, row := range recorder[1:] {
 		values = append(values, row[idx])
+
 	}
 	return values, nil
+
 }
 
 func computeStats(values []string) Stats {
 	var stats Stats
-	if len(values) == 0 {
+	val := len(values)
+	if val == 0 {
 		return stats
 	}
-
-	stats.Rows = len(values)
+	stats.Rows = val
+	sum := 0.0
+	var max float64
+	var min float64
 	uniq := make(map[string]bool)
 	for _, v := range values {
 		if v != "" {
@@ -61,9 +73,6 @@ func computeStats(values []string) Stats {
 		}
 	}
 	stats.Unique = len(uniq)
-
-	sum := 0.0
-	var max, min float64
 	for i, v := range values {
 		v64, err := strconv.ParseFloat(v, 64)
 		if err != nil {
@@ -81,12 +90,12 @@ func computeStats(values []string) Stats {
 				min = v64
 			}
 		}
-
 	}
-	stats.Numeric = true
-	stats.Min = min
-	stats.Max = max
 	stats.Sum = sum
+
+	stats.Max = max
+	stats.Min = min
+	stats.Numeric = true
 	stats.Avg = sum / float64(len(values))
 	return stats
 }
@@ -98,21 +107,27 @@ func main() {
 	}
 	path := os.Args[1]
 	column := os.Args[2]
-
 	values, err := readColumn(path, column)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		switch {
+		case errors.Is(err, ErrSearchColumn):
+			fmt.Fprintln(os.Stderr, "error: no such column:", err)
+		case errors.Is(err, ErrIsEmpty):
+			fmt.Fprintln(os.Stderr, "error: file is empty:", path)
+		case errors.Is(err, fs.ErrNotExist):
+			fmt.Fprintln(os.Stderr, "error: file not found:", path)
+		default:
+			fmt.Fprintln(os.Stderr, "error:", err)
+		}
 		os.Exit(1)
 	}
 	stats := computeStats(values)
-	fmt.Println("rows:", stats.Rows)
-	fmt.Println("unique:", stats.Unique)
-
+	fmt.Println(stats.Rows)
+	fmt.Println(stats.Unique)
 	if stats.Numeric {
 		fmt.Println("sum:", stats.Sum)
 		fmt.Println("avg:", stats.Avg)
 		fmt.Println("max:", stats.Max)
 		fmt.Println("min:", stats.Min)
 	}
-
 }
