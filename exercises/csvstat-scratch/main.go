@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"strconv"
@@ -24,13 +25,8 @@ type Stats struct {
 	Numeric bool
 }
 
-func readColumn(path, column string) ([]string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("open %s : %w", path, err)
-	}
-	defer f.Close()
-	recorder, err := csv.NewReader(f).ReadAll()
+func readColumn(r io.Reader, column string) ([]string, error) {
+	recorder, err := csv.NewReader(r).ReadAll()
 	if err != nil {
 		return nil, err
 	}
@@ -101,21 +97,30 @@ func computeStats(values []string) Stats {
 }
 
 func main() {
+
 	if len(os.Args) != 3 {
 		fmt.Fprintln(os.Stderr, "usage: csvstat <file> <column>")
 		os.Exit(1)
 	}
 	path := os.Args[1]
 	column := os.Args[2]
-	values, err := readColumn(path, column)
+	f, err := os.Open(path)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			fmt.Fprintln(os.Stderr, "error: file not found:", path)
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		os.Exit(1)
+	}
+	defer f.Close()
+	values, err := readColumn(f, column)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrSearchColumn):
 			fmt.Fprintln(os.Stderr, "error: no such column:", err)
 		case errors.Is(err, ErrIsEmpty):
 			fmt.Fprintln(os.Stderr, "error: file is empty:", path)
-		case errors.Is(err, fs.ErrNotExist):
-			fmt.Fprintln(os.Stderr, "error: file not found:", path)
 		default:
 			fmt.Fprintln(os.Stderr, "error:", err)
 		}

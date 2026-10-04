@@ -2,8 +2,8 @@ package main
 
 import (
 	"errors"
-	"io/fs"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -29,15 +29,15 @@ func TestCompute(t *testing.T) {
 func TestError(t *testing.T) {
 	tests := []struct {
 		name    string
-		path    string
+		input   string
 		column  string
 		wantErr error
-	}{{"empty file", "testdata/empty.csv", "age", ErrIsEmpty},
+	}{{"empty file", "", "age", ErrIsEmpty},
 		{"no column", "testdata/data.csv", "agee", ErrSearchColumn},
-		{"no file", "testdata/nope.csv", "age", fs.ErrNotExist}}
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := readColumn(tt.path, tt.column)
+			_, err := readColumn(strings.NewReader(tt.input), tt.column)
 			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("got %v, want %v", err, tt.wantErr)
 			}
@@ -45,11 +45,12 @@ func TestError(t *testing.T) {
 	}
 }
 func TestReadColumnOK(t *testing.T) {
-	got, err := readColumn("testdata/data.csv", "age")
+	r := strings.NewReader("name,age\nAnn,23\nBoris,31\n")
+	got, err := readColumn(r, "age")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	want := []string{"23", "31", "27"}
+	want := []string{"23", "31"}
 	if !slices.Equal(got, want) {
 		t.Errorf("got %v, want %v", got, want)
 	}
