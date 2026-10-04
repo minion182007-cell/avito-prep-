@@ -31,3 +31,6 @@ go.work.sum
 # .idea/
 # .vscode/
 .idea/
+
+# Claude working files
+Claude outputs/
