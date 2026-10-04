@@ -2,10 +2,16 @@ package main
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
-	"slices"
 	"strconv"
+)
+
+var (
+	ErrEmptyFile      = errors.New("empty file")
+	ErrColumnNotFound = errors.New("column not found")
 )
 
 type Stats struct {
@@ -20,16 +26,18 @@ type Stats struct {
 
 func computeStats(values []string) Stats {
 	var stats Stats
-	v := len(values)
-	var t []string
+	if len(values) == 0 {
+		return stats
+	}
+	uniq := make(map[string]bool)
 	for _, v := range values {
-		if !slices.Contains(t, v) && v != "" {
-			t = append(t, v)
+		if v != "" {
+			uniq[v] = true
 		}
 	}
-	stats.Rows = v
-	stats.Unique = len(t)
-	stats.Numeric = false
+	stats.Unique = len(uniq)
+	stats.Rows = len(values)
+
 	sum := 0.0
 	var min, max float64
 	for i, v := range values {
@@ -61,15 +69,15 @@ func computeStats(values []string) Stats {
 func readColumn(path, column string) ([]string, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("open %s:%w", path, err)
+		return nil, fmt.Errorf("open %s: %w", path, err)
 	}
 	defer f.Close()
 	records, err := csv.NewReader(f).ReadAll()
 	if err != nil {
-		return nil, fmt.Errorf("read csv:%w", err)
+		return nil, fmt.Errorf("read csv: %w", err)
 	}
 	if len(records) == 0 {
-		return nil, fmt.Errorf("empty file")
+		return nil, ErrEmptyFile
 	}
 	idx := -1
 	for i, v := range records[0] {
@@ -80,7 +88,7 @@ func readColumn(path, column string) ([]string, error) {
 
 	}
 	if idx == -1 {
-		return nil, fmt.Errorf("column %q not found, available: %v", column, records[0])
+		return nil, fmt.Errorf("column %q: %w, available: %v", column, ErrColumnNotFound, records[0])
 	}
 	var values []string
 	for _, row := range records[1:] {
@@ -97,7 +105,16 @@ func main() {
 	column := os.Args[2]
 	values, err := readColumn(path, column)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		switch {
+		case errors.Is(err, ErrColumnNotFound):
+			fmt.Fprintln(os.Stderr, "error: no such column:", err)
+		case errors.Is(err, ErrEmptyFile):
+			fmt.Fprintln(os.Stderr, "error: file is empty:", path)
+		case errors.Is(err, fs.ErrNotExist):
+			fmt.Fprintln(os.Stderr, "error: file not found:", path)
+		default:
+			fmt.Fprintln(os.Stderr, "error:", err)
+		}
 		os.Exit(1)
 	}
 	stats := computeStats(values)
