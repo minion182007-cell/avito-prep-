@@ -1,131 +1,51 @@
 package main
 
 import (
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
-	"strconv"
+
+	"github.com/minion182007-cell/avito-prep/projects/csvstat/internal/stats"
 )
 
-var (
-	ErrEmptyFile      = errors.New("empty file")
-	ErrColumnNotFound = errors.New("column not found")
-)
-
-type Stats struct {
-	Rows    int
-	Unique  int
-	Numeric bool
-	Sum     float64
-	Avg     float64
-	Min     float64
-	Max     float64
-}
-
-func computeStats(values []string) Stats {
-	var stats Stats
-	if len(values) == 0 {
-		return stats
-	}
-	uniq := make(map[string]bool)
-	for _, v := range values {
-		if v != "" {
-			uniq[v] = true
-		}
-	}
-	stats.Unique = len(uniq)
-	stats.Rows = len(values)
-
-	sum := 0.0
-	var min, max float64
-	for i, v := range values {
-		v64, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			return stats
-		}
-		if i == 0 {
-			max = v64
-			min = v64
-		} else {
-			if v64 < min {
-				min = v64
-			}
-			if v64 > max {
-				max = v64
-			}
-		}
-		sum += v64
-	}
-	stats.Numeric = true
-	stats.Sum = sum
-	stats.Avg = sum / float64(len(values))
-	stats.Max = max
-	stats.Min = min
-	return stats
-
-}
-func readColumn(path, column string) ([]string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("open %s: %w", path, err)
-	}
-	defer f.Close()
-	records, err := csv.NewReader(f).ReadAll()
-	if err != nil {
-		return nil, fmt.Errorf("read csv: %w", err)
-	}
-	if len(records) == 0 {
-		return nil, ErrEmptyFile
-	}
-	idx := -1
-	for i, v := range records[0] {
-		if column == v {
-			idx = i
-			break
-		}
-
-	}
-	if idx == -1 {
-		return nil, fmt.Errorf("column %q: %w, available: %v", column, ErrColumnNotFound, records[0])
-	}
-	var values []string
-	for _, row := range records[1:] {
-		values = append(values, row[idx])
-	}
-	return values, nil
-}
 func main() {
+
 	if len(os.Args) != 3 {
 		fmt.Fprintln(os.Stderr, "usage: csvstat <file> <column>")
 		os.Exit(1)
 	}
 	path := os.Args[1]
 	column := os.Args[2]
-	values, err := readColumn(path, column)
+	f, err := os.Open(path)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			fmt.Fprintln(os.Stderr, "error: file not found:", path)
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		os.Exit(1)
+	}
+	defer f.Close()
+	values, err := stats.ReadColumn(f, column)
 	if err != nil {
 		switch {
-		case errors.Is(err, ErrColumnNotFound):
+		case errors.Is(err, stats.ErrSearchColumn):
 			fmt.Fprintln(os.Stderr, "error: no such column:", err)
-		case errors.Is(err, ErrEmptyFile):
+		case errors.Is(err, stats.ErrIsEmpty):
 			fmt.Fprintln(os.Stderr, "error: file is empty:", path)
-		case errors.Is(err, fs.ErrNotExist):
-			fmt.Fprintln(os.Stderr, "error: file not found:", path)
 		default:
 			fmt.Fprintln(os.Stderr, "error:", err)
 		}
 		os.Exit(1)
 	}
-	stats := computeStats(values)
-	fmt.Println("rows:", stats.Rows)
+	stats := stats.ComputeStats(values)
+	fmt.Println("stats:", stats.Rows)
 	fmt.Println("unique:", stats.Unique)
-
 	if stats.Numeric {
 		fmt.Println("sum:", stats.Sum)
 		fmt.Println("avg:", stats.Avg)
 		fmt.Println("max:", stats.Max)
 		fmt.Println("min:", stats.Min)
 	}
-
 }
