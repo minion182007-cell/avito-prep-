@@ -1,6 +1,7 @@
 package stats
 
 import (
+	"encoding/csv"
 	"errors"
 	"slices"
 	"strings"
@@ -16,7 +17,8 @@ func TestCompute(t *testing.T) {
 		{"text", []string{"Moscow", "Kazan", "Moscow"}, Stats{Rows: 3, Unique: 2}},
 		{"empty", []string{}, Stats{}},
 		{"negative", []string{"-5", "10", "-2"}, Stats{Rows: 3, Unique: 3, Numeric: true, Sum: 3, Avg: 1, Min: -5, Max: 10}},
-		{"duplicates", []string{"7", "7", "7"}, Stats{Rows: 3, Unique: 1, Numeric: true, Sum: 21, Avg: 7, Min: 7, Max: 7}}}
+		{"duplicates", []string{"7", "7", "7"}, Stats{Rows: 3, Unique: 1, Numeric: true, Sum: 21, Avg: 7, Min: 7, Max: 7}},
+		{"unsorted", []string{"3", "1", "2"}, Stats{Rows: 3, Sum: 6, Avg: 2, Max: 3, Min: 1, Unique: 3, Numeric: true}}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := ComputeStats(tt.in)
@@ -34,6 +36,7 @@ func TestError(t *testing.T) {
 		wantErr error
 	}{{"empty file", "", "age", ErrIsEmpty},
 		{"no column", "testdata/data.csv", "agee", ErrSearchColumn},
+		{"broken csv", "a,b\n1\n", "a", csv.ErrFieldCount},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

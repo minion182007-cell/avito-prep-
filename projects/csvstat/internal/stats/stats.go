@@ -26,7 +26,7 @@ type Stats struct {
 func ReadColumn(r io.Reader, column string) ([]string, error) {
 	recorder, err := csv.NewReader(r).ReadAll()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read csv: %w", err)
 	}
 	if len(recorder) == 0 {
 		return nil, ErrIsEmpty
