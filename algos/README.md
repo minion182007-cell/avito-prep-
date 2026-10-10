@@ -19,6 +19,8 @@
 | 15   | [3Sum](https://leetcode.com/problems/3sum/) | два указателя | O(n²) / O(1) | с подсказкой | [two-pointers/0015-3sum.cpp](two-pointers/0015-3sum.cpp) |
 | 20   | [Valid Parentheses](https://leetcode.com/problems/valid-parentheses/) | стек | O(n) / O(n) | с подсказкой | [stack/0020-valid-parentheses.cpp](stack/0020-valid-parentheses.cpp) |
 | 232  | [Implement Queue using Stacks](https://leetcode.com/problems/implement-queue-using-stacks/) | стек, очередь | O(1) аморт. / O(n) | с подсказками | [stack/0232-implement-queue-using-stacks.cpp](stack/0232-implement-queue-using-stacks.cpp) |
+| 155  | [Min Stack](https://leetcode.com/problems/min-stack/) | стек | O(1) / O(n) | с подсказками | [stack/0155-min-stack.cpp](stack/0155-min-stack.cpp) |
+| 150  | [Evaluate Reverse Polish Notation](https://leetcode.com/problems/evaluate-reverse-polish-notation/) | стек | O(n) / O(n) | с подсказками | [stack/0150-evaluate-reverse-polish-notation.cpp](stack/0150-evaluate-reverse-polish-notation.cpp) |
 
 ## Статусы
 
