@@ -21,6 +21,7 @@
 | 232  | [Implement Queue using Stacks](https://leetcode.com/problems/implement-queue-using-stacks/) | стек, очередь | O(1) аморт. / O(n) | с подсказками | [stack/0232-implement-queue-using-stacks.cpp](stack/0232-implement-queue-using-stacks.cpp) |
 | 155  | [Min Stack](https://leetcode.com/problems/min-stack/) | стек | O(1) / O(n) | с подсказками | [stack/0155-min-stack.cpp](stack/0155-min-stack.cpp) |
 | 150  | [Evaluate Reverse Polish Notation](https://leetcode.com/problems/evaluate-reverse-polish-notation/) | стек | O(n) / O(n) | с подсказками | [stack/0150-evaluate-reverse-polish-notation.cpp](stack/0150-evaluate-reverse-polish-notation.cpp) |
+| 739  | [Daily Temperatures](https://leetcode.com/problems/daily-temperatures/) | монотонный стек | O(n) / O(n) | с подсказками | [stack/0739-daily-temperatures.cpp](stack/0739-daily-temperatures.cpp) |
 
 ## Статусы
 
