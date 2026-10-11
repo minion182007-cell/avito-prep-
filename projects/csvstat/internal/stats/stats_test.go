@@ -22,9 +22,7 @@ func TestCompute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := ComputeStats(tt.in)
-			if got != tt.want {
-				t.Errorf("got %+v, want %+v", got, tt.want)
-			}
+			assertStatts(t, got, tt.want)
 		})
 	}
 }
@@ -56,5 +54,11 @@ func TestReadColumnOK(t *testing.T) {
 	want := []string{"23", "31"}
 	if !slices.Equal(got, want) {
 		t.Errorf("got %v, want %v", got, want)
+	}
+}
+func assertStatts(t *testing.T, got, want Stats) {
+	t.Helper()
+	if got != want {
+		t.Errorf("got %+v\nwant %+v", got, want)
 	}
 }
