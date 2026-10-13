@@ -7,22 +7,33 @@ import (
 	"os"
 )
 
-type PingResponse struct {
-	Status string `json:"status"`
+type strucrResponse struct {
+	Struct string `status:json`
 }
 
-func pingHandler(w http.ResponseWriter, r *http.Request) {
+func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(PingResponse{Status: "ok"})
+	json.NewEncoder(w).Encode(v)
+}
+
+func pingHendler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, strucrResponse{Struct: "ok"})
+}
+func healthHeadler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, strucrResponse{Struct: "healthy"})
+}
+func Newmux() *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET/ ping", pingHendler)
+	mux.HandleFunc("GET/ healthy", healthHeadler)
+	return mux
 }
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	post := os.Getenv("POST")
+	if post == "" {
+		post = "8080"
 	}
-	addr := ":" + port
-	log.Printf("listening %q", addr)
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /ping", pingHandler)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	add := ":" + post
+	log.Printf("addr is %s", add)
+	log.Fatal(http.ListenAndServe(add, Newmux()))
 }
