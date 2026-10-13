@@ -22,6 +22,7 @@
 | 155  | [Min Stack](https://leetcode.com/problems/min-stack/) | стек | O(1) / O(n) | с подсказками | [stack/0155-min-stack.cpp](stack/0155-min-stack.cpp) |
 | 150  | [Evaluate Reverse Polish Notation](https://leetcode.com/problems/evaluate-reverse-polish-notation/) | стек | O(n) / O(n) | с подсказками | [stack/0150-evaluate-reverse-polish-notation.cpp](stack/0150-evaluate-reverse-polish-notation.cpp) |
 | 739  | [Daily Temperatures](https://leetcode.com/problems/daily-temperatures/) | монотонный стек | O(n) / O(n) | с подсказками | [stack/0739-daily-temperatures.cpp](stack/0739-daily-temperatures.cpp) |
+| 643  | [Maximum Average Subarray I](https://leetcode.com/problems/maximum-average-subarray-i/) | скользящее окно | O(n) / O(1) | сам | [sliding-window/0643-maximum-average-subarray-i.cpp](sliding-window/0643-maximum-average-subarray-i.cpp) |
 
 ## Статусы
 
