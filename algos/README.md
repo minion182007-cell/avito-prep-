@@ -24,6 +24,7 @@
 | 739  | [Daily Temperatures](https://leetcode.com/problems/daily-temperatures/) | монотонный стек | O(n) / O(n) | с подсказками | [stack/0739-daily-temperatures.cpp](stack/0739-daily-temperatures.cpp) |
 | 643  | [Maximum Average Subarray I](https://leetcode.com/problems/maximum-average-subarray-i/) | скользящее окно | O(n) / O(1) | сам | [sliding-window/0643-maximum-average-subarray-i.cpp](sliding-window/0643-maximum-average-subarray-i.cpp) |
 | 3    | [Longest Substring Without Repeating Characters](https://leetcode.com/problems/longest-substring-without-repeating-characters/) | скользящее окно | O(n) / O(k) | с подсказками | [sliding-window/0003-longest-substring-without-repeating-characters.cpp](sliding-window/0003-longest-substring-without-repeating-characters.cpp) |
+| 209  | [Minimum Size Subarray Sum](https://leetcode.com/problems/minimum-size-subarray-sum/) | скользящее окно | O(n) / O(1) | с подсказками | [sliding-window/0209-minimum-size-subarray-sum.cpp](sliding-window/0209-minimum-size-subarray-sum.cpp) |
 
 ## Статусы
 
