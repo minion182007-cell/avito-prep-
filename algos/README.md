@@ -26,6 +26,7 @@
 | 3    | [Longest Substring Without Repeating Characters](https://leetcode.com/problems/longest-substring-without-repeating-characters/) | скользящее окно | O(n) / O(k) | с подсказками | [sliding-window/0003-longest-substring-without-repeating-characters.cpp](sliding-window/0003-longest-substring-without-repeating-characters.cpp) |
 | 209  | [Minimum Size Subarray Sum](https://leetcode.com/problems/minimum-size-subarray-sum/) | скользящее окно | O(n) / O(1) | с подсказками | [sliding-window/0209-minimum-size-subarray-sum.cpp](sliding-window/0209-minimum-size-subarray-sum.cpp) |
 | 704  | [Binary Search](https://leetcode.com/problems/binary-search/) | бинарный поиск | O(log n) / O(1) | сам | [binary-search/0704-binary-search.cpp](binary-search/0704-binary-search.cpp) |
+| 35   | [Search Insert Position](https://leetcode.com/problems/search-insert-position/) | бинарный поиск | O(log n) / O(1) | сам | [binary-search/0035-search-insert-position.cpp](binary-search/0035-search-insert-position.cpp) |
 
 ## Статусы
 
