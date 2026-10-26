@@ -15,10 +15,10 @@ func TestHeadler(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		{"ping ok", http.MethodGet, "/ping", http.StatusOK, `"status":"ok"`},
-		{"health ok", http.MethodGet, "/health", http.StatusOK, `"status":"healthy"`},
+		{"ping ok", http.MethodGet, "/ping", http.StatusOK, `{"status":"ok"}`},
+		{"health ok", http.MethodGet, "/healthy", http.StatusOK, `{"status":"healthy"}`},
 		{"ping wrong method", http.MethodPatch, "/ping", http.StatusMethodNotAllowed, ""},
-		{"ping ok", http.MethodGet, "/ping", http.StatusNotFound, ""},
+		{"unknown path", http.MethodGet, "/nope", http.StatusNotFound, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -27,7 +27,7 @@ func TestHeadler(t *testing.T) {
 
 			Newmux().ServeHTTP(res, req)
 			if res.Code != tt.wantCode {
-				t.Fatal("got status %d want %d", res.Code, tt.wantCode)
+				t.Errorf("got status %d want %d", res.Code, tt.wantCode)
 			}
 			if tt.wantBody == "" {
 				return
@@ -41,12 +41,12 @@ func TestHeadler(t *testing.T) {
 		})
 	}
 }
-func TestWrongMethodAllowHeader(t *testing.T)  {
-	req:=httptest.NewRequest(http.MethodGet,"/ping",nil)
-	rec:=httptest.NewRecorder()
-	Newmux().ServeHTTP(rec,req)
-	if allow:=rec.Header().Get("Allow");allow!="GET, HEAD"{
-		t.Errorf("Allow = %q,want%q",allow,"GET, HEAD")
+func TestWrongMethodAllowHeader(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/ping", nil)
+	rec := httptest.NewRecorder()
+	Newmux().ServeHTTP(rec, req)
+	if allow := rec.Header().Get("Allow"); allow != "GET, HEAD" {
+		t.Errorf("Allow = %q,want%q", allow, "GET, HEAD")
 	}
 
 }

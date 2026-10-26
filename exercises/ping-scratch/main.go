@@ -8,7 +8,7 @@ import (
 )
 
 type strucrResponse struct {
-	Struct string `status:json`
+	Struct string `json:"status"`
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
@@ -24,16 +24,16 @@ func healthHeadler(w http.ResponseWriter, r *http.Request) {
 }
 func Newmux() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET/ ping", pingHendler)
-	mux.HandleFunc("GET/ healthy", healthHeadler)
+	mux.HandleFunc("GET /ping", pingHendler)
+	mux.HandleFunc("GET /healthy", healthHeadler)
 	return mux
 }
 func main() {
-	post := os.Getenv("POST")
-	if post == "" {
-		post = "8080"
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
-	add := ":" + post
+	add := ":" + port
 	log.Printf("addr is %s", add)
 	log.Fatal(http.ListenAndServe(add, Newmux()))
 }
