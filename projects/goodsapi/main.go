@@ -18,10 +18,10 @@ import (
 var ErrNotFound = errors.New("good not found")
 
 type Good struct {
-	ID         int     `jason:"id"`
-	Name       string  `jason:"name"`
-	Price      float64 `jason:"price"`
-	CategoryID *int    `jason:"Category_id"`
+	ID         int     `json:"id"`
+	Name       string  `json:"name"`
+	Price      float64 `json:"price"`
+	CategoryID *int    `json:"category_id"`
 }
 type server struct {
 	db *sql.DB
@@ -78,13 +78,13 @@ func getGood(ctx context.Context, db *sql.DB, id int) (Good, error) {
 	if err != nil {
 		return Good{}, fmt.Errorf("get good %d: %w", id, err)
 	}
-	return g, err
+	return g, nil
 }
 func ListenGood(ctx context.Context, db *sql.DB) ([]Good, error) {
 	good := []Good{}
 	rows, err := db.QueryContext(ctx, "SELECT id,name,price,id_goodCategory from good order by id")
 	if err != nil {
-		return nil, fmt.Errorf("error is:%w", err)
+		return nil, fmt.Errorf("query goods:%w", err)
 	}
 	defer rows.Close()
 
@@ -110,6 +110,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
