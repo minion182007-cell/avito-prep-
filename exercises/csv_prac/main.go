@@ -30,10 +30,10 @@ func main() {
 
 	values, err := stats.ReadColumn(f, column)
 	if err != nil {
-		var ce *stats.ErrColumn
+		var ce *stats.ColumnError
 		switch {
 		case errors.As(err, &ce):
-			fmt.Fprintf(os.Stderr, "error: no column %q, available: %s\n", ce.Column, strings.Join(ce.Avilable, ", "))
+			fmt.Fprintf(os.Stderr, "error: no column %q, available: %s\n", ce.Column, strings.Join(ce.Available, ", "))
 		case errors.Is(err, stats.ErrFileIsEmpty):
 			fmt.Fprintln(os.Stderr, "error: file is empty:", path)
 		default:

@@ -13,16 +13,16 @@ var (
 	ErrColumnNotFound = errors.New("column not found")
 )
 
-type ErrColumn struct {
-	Column   string
-	Avilable []string
+type ColumnError struct {
+	Column    string
+	Available []string
 }
 
-func (e *ErrColumn) Error() string {
-	return fmt.Sprintf("column: %q avilable: %q", e.Column, e.Avilable)
+func (e *ColumnError) Error() string {
+	return fmt.Sprintf("column: %q avilable: %q", e.Column, e.Available)
 }
 
-func (e *ErrColumn) Unwrap() error { return ErrColumnNotFound }
+func (e *ColumnError) Unwrap() error { return ErrColumnNotFound }
 
 type Stats struct {
 	Rows               int
@@ -47,7 +47,7 @@ func ReadColumn(r io.Reader, column string) ([]string, error) {
 		}
 	}
 	if idx == -1 {
-		return nil, &ErrColumn{Column: column, Avilable: f[0]}
+		return nil, &ColumnError{Column: column, Available: f[0]}
 	}
 	values := make([]string, 0, len(f)-1)
 	for _, row := range f[1:] {
