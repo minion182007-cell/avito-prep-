@@ -23,8 +23,39 @@ type Good struct {
 	Price      float64 `json:"price"`
 	CategoryID *int    `json:"category_id"`
 }
+type createGoodInput struct {
+	Name       string  `json:"name"`
+	Price      float64 `json:"price"`
+	CategoryID *int    `json:"category_id"`
+}
 type server struct {
 	db *sql.DB
+}
+
+func (s *server) handleCreate(w http.ResponseWriter, r *http.Request) {
+	var in createGoodInput
+	err := json.NewDecoder(r.Body).Decode(&in)
+	if err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+	if in.Name == "" {
+		http.Error(w, "name is empty", http.StatusBadRequest)
+		return
+	}
+	if in.Price <= 0 {
+		http.Error(w, "price must be positive", http.StatusBadRequest)
+		return
+	}
+	goods, err := createGood(r.Context(), s.db, in.Name, in.Price, in.CategoryID)
+	if err != nil {
+		log.Println("crate good:", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	json.NewEncoder(w).Encode(goods)
 }
 
 func (s *server) handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +98,19 @@ func newMux(srv *server) *http.ServeMux {
 	mux.HandleFunc("GET /health", srv.handleHealth)
 	mux.HandleFunc("GET /goods", srv.handleList)
 	mux.HandleFunc("GET /goods/{id}", srv.handleGet)
+	mux.HandleFunc("POST /goods", srv.handleCreate)
 	return mux
+}
+func createGood(ctx context.Context, db *sql.DB, name string, prise float64, CategoryID *int) (Good, error) {
+	var g Good
+	err := db.QueryRowContext(ctx, "INSERT into good(name,price,id_goodCategory) VALUES ($1, $2, $3) RETURNING id", name, prise, CategoryID).Scan(&g.ID)
+	if err != nil {
+		return Good{}, fmt.Errorf("create good: %w", err)
+	}
+	g.Name = name
+	g.Price = prise
+	g.CategoryID = CategoryID
+	return g, nil
 }
 func getGood(ctx context.Context, db *sql.DB, id int) (Good, error) {
 	var g Good

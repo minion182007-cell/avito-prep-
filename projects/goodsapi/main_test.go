@@ -27,17 +27,21 @@ func TestRoutes(t *testing.T) {
 		name   string
 		method string
 		path   string
+		body   string
 		code   int
 	}{
-		{"health", http.MethodGet, "/health", http.StatusOK},
-		{"bad id", http.MethodGet, "/goods/abc", http.StatusBadRequest},
-		{"wrong method", http.MethodPost, "/goods/1", http.StatusMethodNotAllowed},
-		{"unknown path", http.MethodGet, "/nope", http.StatusNotFound},
+		{"health", http.MethodGet, "/health", "", http.StatusOK},
+		{"bad id", http.MethodGet, "/goods/abc", "", http.StatusBadRequest},
+		{"wrong method", http.MethodPost, "/goods/1", "", http.StatusMethodNotAllowed},
+		{"unknown path", http.MethodGet, "/nope", "", http.StatusNotFound},
+		{"bad json", http.MethodPost, "/goods", `не json`, http.StatusBadRequest},
+		{"empty name", http.MethodPost, "/goods", `{"name":"","price":100}`, http.StatusBadRequest},
+		{"bad price", http.MethodPost, "/goods", `{"name":"x","price":0}`, http.StatusBadRequest},
 	}
 	mux := newMux(&server{})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(tt.method, tt.path, nil)
+			req := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
 			rec := httptest.NewRecorder()
 			mux.ServeHTTP(rec, req)
 			if rec.Code != tt.code {
