@@ -76,7 +76,7 @@ func TestGoodsDB(t *testing.T) {
 		{"not found", "/goods/99", http.StatusNotFound, "good not found"},
 		{"list", "/goods", http.StatusOK, `"category_id":null`},
 	}
-	mux := newMux(&server{db: db})
+	mux := newMux(&server{store: &pgStore{db: db}})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, tt.path, nil)

@@ -31,6 +31,7 @@
 | 34   | [Find First and Last Position of Element in Sorted Array](https://leetcode.com/problems/find-first-and-last-position-of-element-in-sorted-array/) | бинарный поиск | O(log n) / O(1) | с подсказками | [binary-search/0034-find-first-and-last-position.cpp](binary-search/0034-find-first-and-last-position.cpp) |
 | 153  | [Find Minimum in Rotated Sorted Array](https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/) | бинарный поиск | O(log n) / O(1) | с подсказками | [binary-search/0153-find-minimum-in-rotated-sorted-array.py](binary-search/0153-find-minimum-in-rotated-sorted-array.py) |
 | 33   | [Search in Rotated Sorted Array](https://leetcode.com/problems/search-in-rotated-sorted-array/) | бинарный поиск | O(log n) / O(1) | сам с оговоркой | [binary-search/0033-search-in-rotated-sorted-array.cpp](binary-search/0033-search-in-rotated-sorted-array.cpp) |
+| 206  | [Reverse Linked List](https://leetcode.com/problems/reverse-linked-list/) | связный список | O(n) / O(1) | с подсказками | [linked-list/0206-reverse-linked-list.cpp](linked-list/0206-reverse-linked-list.cpp) |
 
 ## Статусы
 
