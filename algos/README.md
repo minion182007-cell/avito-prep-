@@ -17,7 +17,7 @@
 | 283  | [Move Zeroes](https://leetcode.com/problems/move-zeroes/) | два указателя | O(n) / O(1) | сам (с подсказкой из плана) | [two-pointers/0283-move-zeroes.cpp](two-pointers/0283-move-zeroes.cpp) |
 | 977  | [Squares of a Sorted Array](https://leetcode.com/problems/squares-of-a-sorted-array/) | два указателя | O(n) / O(1) | insert — сам, с конца — с подсказкой | [two-pointers/0977-squares-of-a-sorted-array.cpp](two-pointers/0977-squares-of-a-sorted-array.cpp) |
 | 15   | [3Sum](https://leetcode.com/problems/3sum/) | два указателя | O(n²) / O(1) | с подсказкой | [two-pointers/0015-3sum.cpp](two-pointers/0015-3sum.cpp) |
-| 20   | [Valid Parentheses](https://leetcode.com/problems/valid-parentheses/) | стек | O(n) / O(n) | с подсказкой | [stack/0020-valid-parentheses.cpp](stack/0020-valid-parentheses.cpp) |
+| 20   | [Valid Parentheses](https://leetcode.com/problems/valid-parentheses/) | стек | O(n) / O(n) | с подсказкой · мини-повтор 04.11 ✓ | [stack/0020-valid-parentheses.cpp](stack/0020-valid-parentheses.cpp) |
 | 232  | [Implement Queue using Stacks](https://leetcode.com/problems/implement-queue-using-stacks/) | стек, очередь | O(1) аморт. / O(n) | с подсказками | [stack/0232-implement-queue-using-stacks.cpp](stack/0232-implement-queue-using-stacks.cpp) |
 | 155  | [Min Stack](https://leetcode.com/problems/min-stack/) | стек | O(1) / O(n) | с подсказками | [stack/0155-min-stack.cpp](stack/0155-min-stack.cpp) |
 | 150  | [Evaluate Reverse Polish Notation](https://leetcode.com/problems/evaluate-reverse-polish-notation/) | стек | O(n) / O(n) | с подсказками | [stack/0150-evaluate-reverse-polish-notation.cpp](stack/0150-evaluate-reverse-polish-notation.cpp) |
@@ -32,6 +32,9 @@
 | 153  | [Find Minimum in Rotated Sorted Array](https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/) | бинарный поиск | O(log n) / O(1) | с подсказками | [binary-search/0153-find-minimum-in-rotated-sorted-array.py](binary-search/0153-find-minimum-in-rotated-sorted-array.py) |
 | 33   | [Search in Rotated Sorted Array](https://leetcode.com/problems/search-in-rotated-sorted-array/) | бинарный поиск | O(log n) / O(1) | сам с оговоркой | [binary-search/0033-search-in-rotated-sorted-array.cpp](binary-search/0033-search-in-rotated-sorted-array.cpp) |
 | 206  | [Reverse Linked List](https://leetcode.com/problems/reverse-linked-list/) | связный список | O(n) / O(1) | с подсказками | [linked-list/0206-reverse-linked-list.cpp](linked-list/0206-reverse-linked-list.cpp) |
+| 21   | [Merge Two Sorted Lists](https://leetcode.com/problems/merge-two-sorted-lists/) | связный список | O(n+m) / O(1) | с подсказками | [linked-list/0021-merge-two-sorted-lists.cpp](linked-list/0021-merge-two-sorted-lists.cpp) |
+| 876  | [Middle of the Linked List](https://leetcode.com/problems/middle-of-the-linked-list/) | связный список, быстрый-медленный | O(n) / O(1) | сам (приём дан в плане дня) | [linked-list/0876-middle-of-the-linked-list.cpp](linked-list/0876-middle-of-the-linked-list.cpp) |
+| 141  | [Linked List Cycle](https://leetcode.com/problems/linked-list-cycle/) | связный список, быстрый-медленный | O(n) / O(1) | сам | [linked-list/0141-linked-list-cycle.cpp](linked-list/0141-linked-list-cycle.cpp) |
 
 ## Статусы
 
