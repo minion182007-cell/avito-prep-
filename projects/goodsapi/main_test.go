@@ -28,6 +28,27 @@ func newFakeStore(goods ...Good) *fakeStore {
 	}
 	return fs
 }
+func (s *fakeStore) deleteGood(ctx context.Context, id int) error {
+	_, ok := s.mp[id]
+	if !ok {
+		return ErrNotFound
+	}
+	return nil
+}
+func (s *fakeStore) updateGoods(ctx context.Context, id int, name string, prise float64, CategoryID *int) (Good, error) {
+	_, ok := s.mp[id]
+	if !ok {
+		return Good{}, ErrNotFound
+	}
+
+	var g Good
+	g.CategoryID = CategoryID
+	g.Price = prise
+	g.Name = name
+	g.ID = id
+	s.mp[id] = g
+	return g, nil
+}
 
 // getGood возвращает ErrNotFound
 func (s *fakeStore) getGood(ctx context.Context, id int) (Good, error) {
@@ -67,7 +88,12 @@ func (s *errStore) ListGoods(ctx context.Context) ([]Good, error) {
 }
 func (s *errStore) createGood(ctx context.Context, name string, prise float64, CategoryID *int) (Good, error) {
 	return Good{}, errors.New("db down")
-
+}
+func (s *errStore) deleteGood(ctx context.Context, id int) error {
+	return errors.New("db down")
+}
+func (s *errStore) updateGoods(ctx context.Context, id int, name string, prise float64, CategoryID *int) (Good, error) {
+	return Good{}, errors.New("db down")
 }
 func TestHandlersFake(t *testing.T) {
 	tests := []struct {
@@ -143,6 +169,11 @@ func TestRoutes(t *testing.T) {
 		{"bad json", http.MethodPost, "/goods", `не json`, http.StatusBadRequest},
 		{"empty name", http.MethodPost, "/goods", `{"name":"","price":100}`, http.StatusBadRequest},
 		{"bad price", http.MethodPost, "/goods", `{"name":"x","price":0}`, http.StatusBadRequest},
+		{"delete bad id", http.MethodDelete, "/goods/abc", "", http.StatusBadRequest},
+		{"put bad id", http.MethodPut, "/goods/abc", `{"name":"x","price":1}`, http.StatusBadRequest},
+		{"put bad json", http.MethodPut, "/goods/1", `не json`, http.StatusBadRequest},
+		{"put empty name", http.MethodPut, "/goods/1", `{"name":"","price":100}`, http.StatusBadRequest},
+		{"put bad price", http.MethodPut, "/goods/1", `{"name":"x","price":0}`, http.StatusBadRequest},
 	}
 	mux := newMux(&server{})
 	for _, tt := range tests {

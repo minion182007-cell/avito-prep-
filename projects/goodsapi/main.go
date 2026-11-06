@@ -31,6 +31,8 @@ type createGoodInput struct {
 
 // getGood возвращает ErrNotFound
 type GoodStore interface {
+	deleteGood(ctx context.Context, id int) error
+	updateGoods(ctx context.Context, id int, name string, prise float64, CategoryID *int) (Good, error)
 	getGood(ctx context.Context, id int) (Good, error)
 	createGood(ctx context.Context, name string, prise float64, CategoryID *int) (Good, error)
 	ListGoods(ctx context.Context) ([]Good, error)
@@ -42,6 +44,31 @@ type server struct {
 	store GoodStore
 }
 
+func (s *pgStore) deleteGood(ctx context.Context, id int) error {
+	res, err := s.db.ExecContext(ctx, "DELETE from good where id=$1", id)
+	if err != nil {
+		return fmt.Errorf("delete good:%d %w", id, err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("delete good:%d %w", id, err)
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+func (s *pgStore) updateGoods(ctx context.Context, id int, name string, prise float64, CategoryID *int) (Good, error) {
+	var g Good
+	err := s.db.QueryRowContext(ctx, "UPDATE good SET name=$1,price=$2,id_goodCategory=$3 where id=$4 returning id,name,price,id_goodCategory", name, prise, CategoryID, id).Scan(&g.ID, &g.Name, &g.Price, &g.CategoryID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Good{}, ErrNotFound
+	}
+	if err != nil {
+		return Good{}, fmt.Errorf("update good %d: %w", id, err)
+	}
+	return g, nil
+}
 func (s *pgStore) getGood(ctx context.Context, id int) (Good, error) {
 	var g Good
 	err := s.db.QueryRowContext(ctx, "SELECT id, name, price, id_goodCategory FROM good WHERE id=$1", id).Scan(&g.ID, &g.Name, &g.Price, &g.CategoryID)
@@ -89,6 +116,59 @@ func (s *pgStore) ListGoods(ctx context.Context) ([]Good, error) {
 // Проверка при компиляции
 var _ GoodStore = (*pgStore)(nil)
 
+func (s *server) handleDelete(w http.ResponseWriter, r *http.Request) {
+	strId := r.PathValue("id")
+	id, err := strconv.Atoi(strId)
+	if err != nil {
+		http.Error(w, "id must be a number", http.StatusBadRequest) //400
+		return
+	}
+	err = s.store.deleteGood(r.Context(), id)
+	if errors.Is(err, ErrNotFound) {
+		http.Error(w, "good not found", http.StatusNotFound) // 404
+		return
+	}
+	if err != nil {
+		log.Println("delete good:", err)
+		http.Error(w, "internal error", http.StatusInternalServerError) // 500
+		return
+	}
+	w.WriteHeader(204)
+}
+func (s *server) handleUpdate(w http.ResponseWriter, r *http.Request) {
+	var in createGoodInput
+	err := json.NewDecoder(r.Body).Decode(&in)
+	if err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+	if in.Name == "" {
+		http.Error(w, "name is empty", http.StatusBadRequest)
+		return
+	}
+	if in.Price <= 0 {
+		http.Error(w, "price must be positive", http.StatusBadRequest)
+		return
+	}
+	strId := r.PathValue("id")
+	id, err := strconv.Atoi(strId)
+	if err != nil {
+		http.Error(w, "id must be a number", http.StatusBadRequest) //400
+		return
+	}
+	goods, err := s.store.updateGoods(r.Context(), id, in.Name, in.Price, in.CategoryID)
+	if errors.Is(err, ErrNotFound) {
+		http.Error(w, "good not found", http.StatusNotFound) // 404
+		return
+	}
+	if err != nil {
+		log.Println("update good:", err)
+		http.Error(w, "internal error", http.StatusInternalServerError) // 500
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(goods)
+}
 func (s *server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	var in createGoodInput
 	err := json.NewDecoder(r.Body).Decode(&in)
@@ -157,6 +237,9 @@ func newMux(srv *server) *http.ServeMux {
 	mux.HandleFunc("GET /goods", srv.handleList)
 	mux.HandleFunc("GET /goods/{id}", srv.handleGet)
 	mux.HandleFunc("POST /goods", srv.handleCreate)
+	mux.HandleFunc("DELETE /goods/{id}", srv.handleDelete)
+	mux.HandleFunc("PUT /goods/{id}", srv.handleUpdate)
+
 	return mux
 }
 

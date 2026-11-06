@@ -153,7 +153,7 @@ func main() {
 		log.Fatal("database is empty")
 	}
 
-	db, err := sql.Open("pgx", "sql")
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		log.Fatal("cannot connect: ", err)
 	}
