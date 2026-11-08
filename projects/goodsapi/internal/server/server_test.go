@@ -1,104 +1,21 @@
-package main
+package server
 
 import (
-	"context"
 	"database/sql"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"sort"
 	"strings"
 	"testing"
+
+	"github.com/minion182007-cell/avito-prep/projects/goodsapi/internal/model"
+	"github.com/minion182007-cell/avito-prep/projects/goodsapi/internal/store"
 )
 
-type fakeStore struct {
-	nextID int
-	mp     map[int]Good
-}
-
-func newFakeStore(goods ...Good) *fakeStore {
-	mapa := make(map[int]Good)
-	fs := &fakeStore{nextID: 1, mp: mapa}
-	for _, v := range goods {
-		mapa[v.ID] = v
-		if fs.nextID <= v.ID {
-			fs.nextID = v.ID + 1
-		}
-	}
-	return fs
-}
-func (s *fakeStore) deleteGood(ctx context.Context, id int) error {
-	_, ok := s.mp[id]
-	if !ok {
-		return ErrNotFound
-	}
-	return nil
-}
-func (s *fakeStore) updateGoods(ctx context.Context, id int, name string, prise float64, CategoryID *int) (Good, error) {
-	_, ok := s.mp[id]
-	if !ok {
-		return Good{}, ErrNotFound
-	}
-
-	var g Good
-	g.CategoryID = CategoryID
-	g.Price = prise
-	g.Name = name
-	g.ID = id
-	s.mp[id] = g
-	return g, nil
-}
-
-// getGood возвращает ErrNotFound
-func (s *fakeStore) getGood(ctx context.Context, id int) (Good, error) {
-	g, ok := s.mp[id]
-	if !ok {
-		return Good{}, ErrNotFound
-	}
-	return g, nil
-}
-
-func (s *fakeStore) ListGoods(ctx context.Context) ([]Good, error) {
-	good := []Good{}
-	for _, g := range s.mp {
-		good = append(good, g)
-	}
-	sort.Slice(good, func(i, j int) bool { return good[i].ID < good[j].ID })
-	return good, nil
-
-}
-
-func (s *fakeStore) createGood(ctx context.Context, name string, prise float64, CategoryID *int) (Good, error) {
-	g := Good{ID: s.nextID, Name: name, Price: prise, CategoryID: CategoryID}
-	s.nextID++
-	s.mp[g.ID] = g
-	return g, nil
-}
-
-var _ GoodStore = (*fakeStore)(nil)
-
-type errStore struct{}
-
-func (s *errStore) getGood(ctx context.Context, id int) (Good, error) {
-	return Good{}, errors.New("db down")
-}
-func (s *errStore) ListGoods(ctx context.Context) ([]Good, error) {
-	return nil, errors.New("db down")
-}
-func (s *errStore) createGood(ctx context.Context, name string, prise float64, CategoryID *int) (Good, error) {
-	return Good{}, errors.New("db down")
-}
-func (s *errStore) deleteGood(ctx context.Context, id int) error {
-	return errors.New("db down")
-}
-func (s *errStore) updateGoods(ctx context.Context, id int, name string, prise float64, CategoryID *int) (Good, error) {
-	return Good{}, errors.New("db down")
-}
 func TestHandlersFake(t *testing.T) {
 	tests := []struct {
 		name     string
-		store    GoodStore
+		store    store.GoodStore
 		method   string
 		path     string
 		body     string
@@ -106,23 +23,23 @@ func TestHandlersFake(t *testing.T) {
 		wantBody string
 	}{
 		// --- подделка с данными ---
-		{"get ok", newFakeStore(Good{ID: 1, Name: "Phone", Price: 100}),
+		{"get ok", store.NewFakeStore(model.Good{ID: 1, Name: "Phone", Price: 100}),
 			http.MethodGet, "/goods/1", "", http.StatusOK, `"name":"Phone"`},
-		{"get not found", newFakeStore(Good{ID: 1, Name: "Phone", Price: 100}),
+		{"get not found", store.NewFakeStore(model.Good{ID: 1, Name: "Phone", Price: 100}),
 			http.MethodGet, "/goods/99", "", http.StatusNotFound, ""},
-		{"list", newFakeStore(Good{ID: 1, Name: "Phone", Price: 100}, Good{ID: 2, Name: "Mouse", Price: 50}),
+		{"list", store.NewFakeStore(model.Good{ID: 1, Name: "Phone", Price: 100}, model.Good{ID: 2, Name: "Mouse", Price: 50}),
 			http.MethodGet, "/goods", "", http.StatusOK, `"name":"Mouse"`},
-		{"list empty", newFakeStore(),
+		{"list empty", store.NewFakeStore(),
 			http.MethodGet, "/goods", "", http.StatusOK, `[]`},
-		{"create", newFakeStore(),
+		{"create", store.NewFakeStore(),
 			http.MethodPost, "/goods", `{"name":"Mouse","price":50}`, http.StatusCreated, `"id":1`},
 
 		// --- сломанное хранилище → 500 ---
-		{"get 500", &errStore{},
+		{"get 500", &store.ErrStore{},
 			http.MethodGet, "/goods/1", "", http.StatusInternalServerError, ""},
-		{"list 500", &errStore{},
+		{"list 500", &store.ErrStore{},
 			http.MethodGet, "/goods", "", http.StatusInternalServerError, ""},
-		{"create 500", &errStore{},
+		{"create 500", &store.ErrStore{},
 			http.MethodPost, "/goods", `{"name":"Mouse","price":50}`, http.StatusInternalServerError, ""},
 	}
 
@@ -213,7 +130,7 @@ func TestGoodsDB(t *testing.T) {
 		{"not found", "/goods/99", http.StatusNotFound, "good not found"},
 		{"list", "/goods", http.StatusOK, `"category_id":null`},
 	}
-	mux := newMux(&server{store: &pgStore{db: db}})
+	mux := newMux(&server{store: store.NewPgStore(db)})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
