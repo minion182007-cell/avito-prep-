@@ -72,6 +72,13 @@ func (s *fakeStore) CreateGood(ctx context.Context, name string, prise float64, 
 	s.mp[g.ID] = g
 	return g, nil
 }
+func (s *fakeStore) PurchaseGood(ctx context.Context, idShop int, idGood int, count int) error {
+	_, ok := s.mp[idGood]
+	if !ok {
+		return ErrNotFound
+	}
+	return nil
+}
 
 var _ GoodStore = (*fakeStore)(nil)
 
@@ -91,6 +98,9 @@ func (s *ErrStore) DeleteGood(ctx context.Context, id int) error {
 }
 func (s *ErrStore) UpdateGoods(ctx context.Context, id int, name string, prise float64, CategoryID *int) (model.Good, error) {
 	return model.Good{}, errors.New("db down")
+}
+func (s *ErrStore) PurchaseGood(ctx context.Context, idShop int, idGood int, count int) error {
+	return errors.New("db down")
 }
 
 var _ GoodStore = (*ErrStore)(nil)

@@ -16,4 +16,5 @@ type GoodStore interface {
 	GetGood(ctx context.Context, id int) (model.Good, error)
 	CreateGood(ctx context.Context, name string, prise float64, CategoryID *int) (model.Good, error)
 	ListGoods(ctx context.Context) ([]model.Good, error)
+	PurchaseGood(ctx context.Context, idShop int, idGood int, count int) error
 }

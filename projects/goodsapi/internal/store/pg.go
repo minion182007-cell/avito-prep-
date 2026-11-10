@@ -14,7 +14,34 @@ type PgStore struct {
 }
 
 func NewPgStore(db *sql.DB) *PgStore { return &PgStore{db: db} }
+func (s *PgStore) PurchaseGood(ctx context.Context, idShop int, idGood int, count int) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
 
+	var curentcount int
+	err = tx.QueryRowContext(ctx, "SELECT count FROM Good_Shop where id_good=$1 AND id_shop=$2 FOR UPDATE ", idGood, idShop).Scan(&curentcount)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
+		return fmt.Errorf("chek stock: %w", err)
+	}
+	if curentcount < count {
+		return errors.New("not enough stock")
+	}
+	_, err = tx.ExecContext(ctx, "UPDATE Good_Shop SET count=count-$1 where id_good=$2 AND id_shop=$3", count, idGood, idShop)
+	if err != nil {
+		return fmt.Errorf("update stock: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit tx: %w", err)
+	}
+	return nil
+}
 func (s *PgStore) DeleteGood(ctx context.Context, id int) error {
 	res, err := s.db.ExecContext(ctx, "DELETE from good where id=$1", id)
 	if err != nil {
