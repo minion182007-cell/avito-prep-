@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -8,101 +9,93 @@ import (
 	"strconv"
 
 	"github.com/minion182007-cell/avito-prep/projects/goodsapi/internal/model"
+	"github.com/minion182007-cell/avito-prep/projects/goodsapi/internal/service"
 	"github.com/minion182007-cell/avito-prep/projects/goodsapi/internal/store"
 )
 
+type GoodService interface {
+	Create(ctx context.Context, in model.CreateGoodInput) (model.Good, error)
+	Update(ctx context.Context, id int, in model.CreateGoodInput) (model.Good, error)
+	Get(ctx context.Context, id int) (model.Good, error)
+	List(ctx context.Context) ([]model.Good, error)
+	Delete(ctx context.Context, id int) error
+}
+
 type server struct {
-	store store.GoodStore
+	svc GoodService
+}
+
+// writeError превращает ошибку сервиса в HTTP-статус.
+func writeError(w http.ResponseWriter, op string, err error) {
+	var ve *service.ValidationError
+	switch {
+	case errors.As(err, &ve):
+		http.Error(w, ve.Msg, http.StatusBadRequest) // 400
+	case errors.Is(err, service.ErrNotFound):
+		http.Error(w, "good not found", http.StatusNotFound) // 404
+	default:
+		log.Println(op+":", err)
+		http.Error(w, "internal error", http.StatusInternalServerError) // 500
+	}
 }
 
 func (s *server) handleDelete(w http.ResponseWriter, r *http.Request) {
-	strId := r.PathValue("id")
-	id, err := strconv.Atoi(strId)
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		http.Error(w, "id must be a number", http.StatusBadRequest) //400
+		http.Error(w, "id must be a number", http.StatusBadRequest)
 		return
 	}
-	err = s.store.DeleteGood(r.Context(), id)
-	if errors.Is(err, store.ErrNotFound) {
-		http.Error(w, "good not found", http.StatusNotFound) // 404
+	if err := s.svc.Delete(r.Context(), id); err != nil {
+		writeError(w, "delete good", err)
 		return
 	}
-	if err != nil {
-		log.Println("delete good:", err)
-		http.Error(w, "internal error", http.StatusInternalServerError) // 500
-		return
-	}
-	w.WriteHeader(204)
+	w.WriteHeader(http.StatusNoContent)
 }
+
 func (s *server) handleUpdate(w http.ResponseWriter, r *http.Request) {
-	strId := r.PathValue("id")
-	id, err := strconv.Atoi(strId)
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		http.Error(w, "id must be a number", http.StatusBadRequest) //400
+		http.Error(w, "id must be a number", http.StatusBadRequest)
 		return
 	}
 	var in model.CreateGoodInput
-	err = json.NewDecoder(r.Body).Decode(&in)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
-	if in.Name == "" {
-		http.Error(w, "name is empty", http.StatusBadRequest)
-		return
-	}
-	if in.Price <= 0 {
-		http.Error(w, "price must be positive", http.StatusBadRequest)
-		return
-	}
-
-	goods, err := s.store.UpdateGoods(r.Context(), id, in.Name, in.Price, in.CategoryID)
-	if errors.Is(err, store.ErrNotFound) {
-		http.Error(w, "good not found", http.StatusNotFound) // 404
-		return
-	}
+	good, err := s.svc.Update(r.Context(), id, in)
 	if err != nil {
-		log.Println("update good:", err)
-		http.Error(w, "internal error", http.StatusInternalServerError) // 500
+		writeError(w, "update good", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(goods)
+	json.NewEncoder(w).Encode(good)
 }
+
 func (s *server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	var in model.CreateGoodInput
-	err := json.NewDecoder(r.Body).Decode(&in)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
-	if in.Name == "" {
-		http.Error(w, "name is empty", http.StatusBadRequest)
-		return
-	}
-	if in.Price <= 0 {
-		http.Error(w, "price must be positive", http.StatusBadRequest)
-		return
-	}
-	goods, err := s.store.CreateGood(r.Context(), in.Name, in.Price, in.CategoryID)
+	good, err := s.svc.Create(r.Context(), in)
 	if err != nil {
-		log.Println("crate good:", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeError(w, "create good", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-	json.NewEncoder(w).Encode(goods)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(good)
 }
 
 func (s *server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("ok"))
 }
+
 func (s *server) handleList(w http.ResponseWriter, r *http.Request) {
-	goods, err := s.store.ListGoods(r.Context())
+	goods, err := s.svc.List(r.Context())
 	if err != nil {
-		log.Println("goods list:", err)
-		http.Error(w, "internal error", http.StatusInternalServerError) //500
+		writeError(w, "list goods", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -110,29 +103,25 @@ func (s *server) handleList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleGet(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		http.Error(w, "id must be a number", http.StatusBadRequest) //400
+		http.Error(w, "id must be a number", http.StatusBadRequest)
 		return
 	}
-
-	g, err := s.store.GetGood(r.Context(), id)
-	if errors.Is(err, store.ErrNotFound) {
-		http.Error(w, "good not found", http.StatusNotFound) // 404
-		return
-	}
+	good, err := s.svc.Get(r.Context(), id)
 	if err != nil {
-		log.Println("get good:", err)
-		http.Error(w, "internal error", http.StatusInternalServerError) // 500
+		writeError(w, "get good", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(g)
+	json.NewEncoder(w).Encode(good)
 }
+
+// NewHandler собирает цепочку: store -> service -> server.
 func NewHandler(st store.GoodStore) http.Handler {
-	return newMux(&server{store: st})
+	return newMux(&server{svc: service.New(st)})
 }
+
 func newMux(srv *server) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", srv.handleHealth)
@@ -141,6 +130,5 @@ func newMux(srv *server) *http.ServeMux {
 	mux.HandleFunc("POST /goods", srv.handleCreate)
 	mux.HandleFunc("DELETE /goods/{id}", srv.handleDelete)
 	mux.HandleFunc("PUT /goods/{id}", srv.handleUpdate)
-
 	return mux
 }

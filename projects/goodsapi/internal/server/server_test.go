@@ -45,7 +45,7 @@ func TestHandlersFake(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mux := newMux(&server{store: tt.store})
+			mux := NewHandler(tt.store)
 			rec := httptest.NewRecorder()
 			req := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
 			mux.ServeHTTP(rec, req)
@@ -92,7 +92,7 @@ func TestRoutes(t *testing.T) {
 		{"put empty name", http.MethodPut, "/goods/1", `{"name":"","price":100}`, http.StatusBadRequest},
 		{"put bad price", http.MethodPut, "/goods/1", `{"name":"x","price":0}`, http.StatusBadRequest},
 	}
-	mux := newMux(&server{})
+	mux := NewHandler(store.NewFakeStore())
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
@@ -130,7 +130,7 @@ func TestGoodsDB(t *testing.T) {
 		{"not found", "/goods/99", http.StatusNotFound, "good not found"},
 		{"list", "/goods", http.StatusOK, `"category_id":null`},
 	}
-	mux := newMux(&server{store: store.NewPgStore(db)})
+	mux := NewHandler(store.NewPgStore(db))
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
