@@ -14,6 +14,10 @@ import (
 )
 
 func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		log.Fatal("DATABASE_URL is not set")
@@ -23,14 +27,21 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
 
-	if err := db.PingContext(ctx); err != nil {
+
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(30 * time.Minute)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	err = db.PingContext(ctx);
+	cancel()
+	if  err != nil {
 		log.Fatal("cannot connect: ", err)
+
 	}
-	mux := server.NewHandler(store.NewPgStore(db))
-	log.Println("listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	handler := server.NewHandler(store.NewPgStore(db))
+	log.Println("listening on :"+port)
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 
 }
