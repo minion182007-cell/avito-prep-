@@ -1,13 +1,17 @@
 package server
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/minion182007-cell/avito-prep/projects/goodsapi/internal/model"
 	"github.com/minion182007-cell/avito-prep/projects/goodsapi/internal/store"
 )
@@ -33,8 +37,14 @@ func TestHandlersFake(t *testing.T) {
 			http.MethodGet, "/goods", "", http.StatusOK, `[]`},
 		{"create", store.NewFakeStore(),
 			http.MethodPost, "/goods", `{"name":"Mouse","price":50}`, http.StatusCreated, `"id":1`},
+		{"put success", store.NewFakeStore(model.Good{ID: 1, Name: "Phone", Price: 100}), http.MethodPut, "/goods/1", `{"name":"iPhone","price":200}`, http.StatusOK, `"name":"iPhone"`},
+		{"put not found", store.NewFakeStore(model.Good{ID: 1, Name: "Phone", Price: 100}), http.MethodPut, "/goods/99", `{"name":"iPhone","price":200}`, http.StatusNotFound, ""},
+		{"delete success", store.NewFakeStore(model.Good{ID: 1, Name: "Phone", Price: 100}), http.MethodDelete, "/goods/1", "", http.StatusNoContent, ""},
+		{"delete not found", store.NewFakeStore(model.Good{ID: 1, Name: "Phone", Price: 100}), http.MethodDelete, "/goods/99", "", http.StatusNotFound, ""},
 
 		// --- сломанное хранилище → 500 ---
+		{"put 500", &store.ErrStore{}, http.MethodPut, "/goods/1", `{"name":"iPhone","price":200}`, http.StatusInternalServerError, ""},
+		{"delete 500", &store.ErrStore{}, http.MethodDelete, "/goods/1", "", http.StatusInternalServerError, ""},
 		{"get 500", &store.ErrStore{},
 			http.MethodGet, "/goods/1", "", http.StatusInternalServerError, ""},
 		{"list 500", &store.ErrStore{},
@@ -104,20 +114,45 @@ func TestRoutes(t *testing.T) {
 		})
 	}
 }
-
 func TestGoodsDB(t *testing.T) {
-
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		t.Skip("DATABASE_URL not set")
 	}
-	db, err := sql.Open("pgx", dsn)
+
+	u, err := url.Parse(dsn)
 	if err != nil {
-		t.Fatalf("open is : %v", err)
+		t.Fatalf("parse DATABASE_URL: %v", err)
+	}
+
+	// Подключаемся к отдельной тестовой базе.
+	u.Path = "/goodsapi_test"
+
+	db, err := sql.Open("pgx", u.String())
+	if err != nil {
+		t.Fatalf("open: %v", err)
 	}
 	defer db.Close()
-	if err := db.Ping(); err != nil {
+
+	ctx := context.Background()
+
+	if err := db.PingContext(ctx); err != nil {
 		t.Fatalf("ping: %v", err)
+	}
+
+	// Очищаем данные перед каждым запуском.
+	_, err = db.ExecContext(ctx, "TRUNCATE good RESTART IDENTITY CASCADE")
+	if err != nil {
+		t.Fatalf("truncate goods: %v", err)
+	}
+
+	pgStore := store.NewPgStore(db)
+	mux := NewHandler(pgStore)
+
+	// Создаём товар самостоятельно.
+	good, err := pgStore.CreateGood(ctx, "iPhone", 200, nil)
+	if err != nil {
+		t.Fatalf("create good: %v", err)
 	}
 
 	tests := []struct {
@@ -126,11 +161,11 @@ func TestGoodsDB(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		{"existing", "/goods/1", http.StatusOK, `"name":"iPhone"`},
-		{"not found", "/goods/99", http.StatusNotFound, "good not found"},
+		{"existing", fmt.Sprintf("/goods/%d", good.ID), http.StatusOK, `"name":"iPhone"`},
+		{"not found", fmt.Sprintf("/goods/%d", good.ID+1), http.StatusNotFound, "good not found"},
 		{"list", "/goods", http.StatusOK, `"category_id":null`},
 	}
-	mux := NewHandler(store.NewPgStore(db))
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
@@ -141,8 +176,10 @@ func TestGoodsDB(t *testing.T) {
 			if rec.Code != tt.wantCode {
 				t.Fatalf("code = %d, want %d", rec.Code, tt.wantCode)
 			}
+
 			if !strings.Contains(rec.Body.String(), tt.wantBody) {
-				t.Errorf("body = %q, want it to contain %q", rec.Body.String(), tt.wantBody)
+				t.Errorf("body = %q, want it to contain %q",
+					rec.Body.String(), tt.wantBody)
 			}
 		})
 	}
