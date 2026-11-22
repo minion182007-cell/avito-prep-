@@ -7,23 +7,22 @@
 //          даёт false, «не найдено» даёт true). wind.substr(1), а не substr(left+1):
 //          у окна своя нумерация. right < s.size() (без -1), длина right-left+1.
 //          Первая попытка сравнивала только s[left] и s[right] — повтор может быть в середине.
-// Статус: с подсказками
+// Статус: сам
 // Дата: 14.10.2026
 
 class Solution {
 public:
     int lengthOfLongestSubstring(string s) {
-        int left = 0;
-        int max1 = 0;
-        string wind = "";
-        int n = s.size();
-        for (int right = 0; right <= n - 1; ++right) {
-            while (wind.find(s[right]) != string::npos) {
-                wind = wind.substr(1);
-                ++left;
+        int max1=0;
+        string sr = "";
+        int left=0;
+        for (int right=0;right<s.size();++right) {
+            while (sr.find(s[right])!=sr.npos) {
+                left++;
+                sr=sr.substr(1);
             }
-            wind += s[right];
-            max1 = max(max1, right - left + 1);
+            sr+=s[right];
+            max1=max(max1,right-left+1);
         }
         return max1;
     }
